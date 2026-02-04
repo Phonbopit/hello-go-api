@@ -34,29 +34,33 @@ GOOS=linux GOARCH=amd64 go build -o hello-go-api-linux
 
 ## API Endpoints
 
-| Method   | Path                | Description        |
-| -------- | ------------------- | ------------------ |
-| `GET`    | `/v1/products`      | List all products  |
-| `GET`    | `/v1/products/{id}` | Get single product |
-| `POST`   | `/v1/products`      | Create product     |
-| `DELETE` | `/v1/products/{id}` | Delete product     |
+| Method   | Path                | Auth Required | Description        |
+| -------- | ------------------- | ------------- | ------------------ |
+| `POST`   | `/admin/keys`       | No            | Create API key     |
+| `GET`    | `/admin/keys`       | No            | List API keys      |
+| `GET`    | `/v1/products`      | No            | List all products  |
+| `GET`    | `/v1/products/{id}` | No            | Get single product |
+| `POST`   | `/v1/products`      | **Yes**       | Create product     |
+| `DELETE` | `/v1/products/{id}` | **Yes**       | Delete product     |
 
-## Testing with curl
+## Quick Start
 
 ```bash
-## Create product
-curl -X POST http://localhost:8080/v1/products \
-  -d '{"id":"1","name":"MacBook Pro","price":2499.99}'
+# 1. Create API key
+curl -X POST http://localhost:8080/admin/keys -d '{"name":"My App"}'
+# Copy the "key" from response (shown once only)
 
+# 2. Create product (requires key)
 curl -X POST http://localhost:8080/v1/products \
-  -d '{"id":"2","name":"iPhone 16","price":999.99}'
+  -H "X-API-Key: YOUR_KEY_HERE" \
+  -d '{"id":"1","name":"MacBook","price":2499}'
 
-## List all products
+# 3. List products (public)
 curl http://localhost:8080/v1/products
+```
 
-## Get single product
-curl http://localhost:8080/v1/products/1
+## Test Script
 
-## Delete product
-curl -X DELETE http://localhost:8080/v1/products/1
+```bash
+./test-api.sh
 ```

@@ -1,29 +1,49 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 
+	_ "github.com/mattn/go-sqlite3"
+
 	"hello-go-api/handler"
+	"hello-go-api/middleware"
 	"hello-go-api/store"
 )
 
 func main() {
-	db, err := store.NewSQLiteStore("products.db")
-
+	// Open database connection
+	db, err := sql.Open("sqlite3", "products.db")
 	if err != nil {
-		log.Fatal("Failed to initialize database:", err)
+		log.Fatal("Failed to open database:", err)
+	}
+	defer db.Close()
+
+	// Initialize stores
+	productStore, err := store.NewSQLiteStore(db)
+	if err != nil {
+		log.Fatal("Failed to initialize product store:", err)
 	}
 
-	defer db.Close() // Close DB when main() exits
+	apiKeyStore, err := store.NewSQLiteAPIKeyStore(db)
+	if err != nil {
+		log.Fatal("Failed to initialize API key store:", err)
+	}
 
-	productHandler := &handler.ProductHandler{Store: db}
+	// Initialize handlers
+	productHandler := &handler.ProductHandler{Store: productStore}
+	apiKeyHandler := &handler.APIKeyHandler{Store: apiKeyStore}
 
+	// Create router and middleware
 	mux := http.NewServeMux()
-	productHandler.RegisterRoutes(mux)
+	authMiddleware := middleware.RequireAPIKey(apiKeyStore)
+
+	// Register routes
+	apiKeyHandler.RegisterRoutes(mux)
+	productHandler.RegisterRoutes(mux, authMiddleware)
 
 	fmt.Println("Server running on http://localhost:8080")
-	fmt.Println("Database: products.db")
 	http.ListenAndServe(":8080", mux)
 }
