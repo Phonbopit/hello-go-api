@@ -76,9 +76,14 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *ProductHandler) RegisterRoutes(mux *http.ServeMux) {
+// RegisterRoutes registers product routes with optional authentication middleware.
+// Public routes (GET) have no auth. Protected routes (POST/DELETE) use authMiddleware.
+func (h *ProductHandler) RegisterRoutes(mux *http.ServeMux, authMiddleware func(http.Handler) http.Handler) {
+	// Public routes
 	mux.HandleFunc("GET "+basePathV1+"/products", h.List)
 	mux.HandleFunc("GET "+basePathV1+"/products/{id}", h.Get)
-	mux.HandleFunc("POST "+basePathV1+"/products", h.Create)
-	mux.HandleFunc("DELETE "+basePathV1+"/products/{id}", h.Delete)
+
+	// Protected routes
+	mux.Handle("POST "+basePathV1+"/products", authMiddleware(http.HandlerFunc(h.Create)))
+	mux.Handle("DELETE "+basePathV1+"/products/{id}", authMiddleware(http.HandlerFunc(h.Delete)))
 }

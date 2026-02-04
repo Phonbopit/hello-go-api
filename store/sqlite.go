@@ -20,13 +20,7 @@ type SQLiteStore struct {
 	db *sql.DB
 }
 
-func NewSQLiteStore(dbPath string) (*SQLiteStore, error) {
-	db, err := sql.Open("sqlite3", dbPath)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
-	}
-
+func NewSQLiteStore(db *sql.DB) (*SQLiteStore, error) {
 	schema := `
 	CREATE TABLE IF NOT EXISTS products (
 		id TEXT PRIMARY KEY,
@@ -35,15 +29,10 @@ func NewSQLiteStore(dbPath string) (*SQLiteStore, error) {
 	);`
 
 	if _, err := db.Exec(schema); err != nil {
-		db.Close()
 		return nil, fmt.Errorf("failed to create schema: %w", err)
 	}
 
 	return &SQLiteStore{db: db}, nil
-}
-
-func (s *SQLiteStore) Close() error {
-	return s.db.Close()
 }
 
 func (s *SQLiteStore) List() ([]model.Product, error) {
